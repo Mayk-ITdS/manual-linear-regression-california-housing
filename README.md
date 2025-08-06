@@ -46,9 +46,9 @@ v.prediction_vs_target()
 v.one_choice()
 ```
 ### Example Plot
-```
-<img src="plots/pred_vs_target.png" width="600">
-```
+
+<img src="./plots/pred_vs_target.png" alt="Prediction vs Target" width="600">
+
 ##  ML Roadmap Table
 
 | ML Path                         | Neural Network Path |
