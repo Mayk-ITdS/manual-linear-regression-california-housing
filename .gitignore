@@ -19,10 +19,6 @@ env/
 .DS_Store
 *.swp
 
-# Plots and outputs
-plots/
-*.png
-*.jpg
 
 # Model artifacts (later)
 *.h5
