@@ -10,13 +10,23 @@ The purpose is to deeply understand the fundamentals of learning algorithms by *
 
 This repository demonstrates:
 
--  Manual ETL pipeline and Z-score normalization
+- Manual ETL pipeline and Z-score normalization
 -  Exploratory Data Analysis (EDA)
--  Pearson and Spearman correlation analysis (implemented from scratch)**
+- Custom rank computation for Spearman correlation
+
+- Pearson & Spearman correlation matrices (fully implemented from scratch)
+
 - Manual train/test splitting
--  Linear regression via matrix algebra (`β = (XᵀX)^-1 Xᵀy`)
-- (Planned) Gradient descent–based regression
--  (Planned) Manually built single-layer neural network
+
+- Linear regression via:
+
+  - Matrix algebra (β = (XᵀX)^-1 Xᵀy)
+
+   - (Implemented) Gradient descent
+
+- Custom loss function and manual weight updates
+
+- (Planned) Manually built single-layer neural network for regression
 
 
 ## Dataset
@@ -33,38 +43,57 @@ The dataset is sourced from the `fetch_california_housing()` utility in `scikit-
 It’s based on real 1990 California census data, and widely used in regression benchmarks.
 
 ---
+## Feature Engineering
+- Custom feature transformations implemented:
 
+- RoomDiff = AveRooms - AveBedrms
+
+- EstimatedHouseholds = Population / AveOccup
+
+- OccupancyScore = RoomDiff / AveOccup
+
+- Removed highly correlated features to reduce noise (AveRooms, AveBedrms, Population, etc.)
 ##  Project Structure
 
 ```plaintext
 manual-linear-regression-california-housing/
 ├── README.md                  # Project overview and documentation
-├── regression.py              # Full ETL + correlation + linear model (matrix-based)
+├── regression.py              # Full ETL + correlation + linear model (matrix-based,manual)
 ├── src/
 │   ├── regression_manual.py   # Custom regression via matrix algebra
-│   └── regression_gd.py       # (Planned) Manual gradient descent version
+│   └── regression_gd.py       # Manual gradient descent implementation 
 ├── plots/                     # Visualizations (correlation matrix, predictions, etc.)
-├── notebooks/                 # (Optional) Experimental notebooks
+├── notebooks/                 # (Optional) Experimental notebooks & visualizations
 └── .gitignore                 # Ignored files and directories
 ```
 
 ##  ML Roadmap Table
 
-| ML Path                         | Neural Network Path                      |
-|---------------------------------|------------------------------------------|
-|  Manual linear regression       |  Manual single-layer neuron             |
-|  Pearson & Spearman correlation |  Activation functions: ReLU, Sigmoid    |
-| Gradient descent (regression) |  MLP (2–3 layers)                       |
-|  Regularization (L1/L2)       |  Dropout, BatchNorm                     |
-|  PCA, RFE                      |  ML vs NN performance comparison        |
+| ML Path                         | Neural Network Path |
+|---------------------------------|----------------|
+| Manual linear regression        |   Single-layer perceptron (manual)            |
+| Pearson & Spearman correlation  |  Activation functions: ReLU, Sigmoid |
+| Gradient descent implementation |  Multi-layer perceptron (MLP) |
+| Regularization (L1/L2)          |  Dropout, BatchNorm |
+| PCA, RFE                        |  ML vs NN performance comparison |
 
 ## Status
-
 | Component                                     | Status |
-|-----------------------------------------------|--------|
-| Data loading and normalization (ETL)          | Done   |
-| Pearson correlation (feature-feature/target)  | Done   |
-| Spearman correlation (feature-feature/target) | Done   |
-| Linear regression (matrix algebra)            | Done   |
-| Regression via gradient descent               | Upcoming |
-| Manual single-layer neuron                    | In progress |
+| --------------------------------------------- | ------ |
+| Data loading & normalization (ETL)            |  Complete |
+| Pearson correlation (feature-feature/target)  | Complete |
+| Spearman correlation (feature-feature/target) | Complete |
+| Linear regression (matrix algebra)            | Complete |
+| Linear regression (gradient descent)          | Complete |
+| Custom training loop, loss & update rule      | Complete |
+| Feature engineering                           | Complete |
+| Single-layer neural network                   | In Progress |
+| Evaluation metrics (R², RMSE, MAE)            | To Do |
+| Weight saving/loading                         | To Do |
+| Test set evaluation                           | To Do |
+---
+
+Author  
+**Michał Zieliński**  
+[GitHub: @Mayk-ITdS](https://github.com/Mayk-ITdS)  
+Email: majk.develop@gmail.com  <!-- (replace with your real one if you want) -->
