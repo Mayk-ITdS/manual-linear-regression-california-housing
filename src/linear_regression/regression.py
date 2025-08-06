@@ -1,9 +1,12 @@
-from typing import Any
+from typing import Any, Tuple, Callable
 import numpy as np
 import pandas as pd
 from numpy import ndarray, dtype
 from sklearn.datasets import fetch_california_housing
+import json
+import os
 
+pd.set_option('display.max_rows', None)
 pd.set_option('display.max_columns', None)
 data = fetch_california_housing(as_frame=True)
 
@@ -28,15 +31,36 @@ np.random.seed(42)
 df_full = data.frame
 df_full = df_full.sample(frac=1).reset_index(drop=True)
 
+ETLReturnType = Tuple[
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+    np.ndarray, np.ndarray, pd.DataFrame, pd.DataFrame,
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray,
+    pd.Index, np.ndarray, np.ndarray
+]
+
+def load_model(path: str = "model.json") -> dict | None:
+    if path is None:
+        path = os.path.join(os.path.dirname(__file__), "model.json")
+    if os.path.exists(path):
+        with open(path, "r") as f:
+            model = json.load(f)
+        print("Model loaded from file.",path)
+        return model
+    else:
+        print("Model file not found, training will be required.",path)
+        return None
 
 def features_engineering(df: pd.DataFrame) -> pd.DataFrame:
     df["RoomDiff"] = df["AveRooms"] - df["AveBedrms"]
     df["EstimatedHouseholds"] = df["Population"] / df["AveOccup"]
     df["OccupancyScore"] = df["RoomDiff"] / df["AveOccup"]
     df["OccupancyBoost"] = df["RoomDiff"] * df["AveOccup"]
-    df.drop(["AveRooms", "AveBedrms","AveOccup","Population","OccupancyBoost"], axis=1, inplace=True)
+    df.drop(["AveRooms", "AveBedrms", "AveOccup", "Population", "OccupancyBoost"], axis=1, inplace=True)
     print(df.head())
+
     return df
+
 
 def etl(df: pd.DataFrame):
     def rank_values(col: np.array) -> ndarray[tuple[int, ...], dtype[Any]]:
@@ -65,8 +89,10 @@ def etl(df: pd.DataFrame):
         return result
 
     feature_names = df.columns.drop("MedHouseVal")
-    X = np.array(df.drop("MedHouseVal",axis=1).values)
-    Y = np.array(df["MedHouseVal"])
+
+    X = np.array(df.drop("MedHouseVal", axis=1).values)
+    Y = df["MedHouseVal"]
+
     number_samples = df.shape[0]
     split_index = int(number_samples * 0.8)
 
@@ -95,32 +121,77 @@ def etl(df: pd.DataFrame):
     df_fpearson = pd.DataFrame(features_pearson, index=feature_names, columns=feature_names)
     xy_pearson = (X_zscore.T @ Y_zscore) / (number_samples - 1)
     df_xy_pearson = pd.DataFrame(xy_pearson, index=feature_names, columns=["Target"])
-    return X, Y, X_zscore, Y_zscore, X_train, X_test, Y_train, Y_test, xy_pearson, features_pearson, df_fpearson, df_xy_pearson, X_ranks, Y_ranks, X_spearmann, Y_spearmann, feature_names,X_rank_z,Y_rank_z
+    return X, Y, X_zscore, Y_zscore, X_train, X_test, Y_train, Y_test, xy_pearson, features_pearson, df_fpearson, df_xy_pearson, X_ranks, Y_ranks, X_spearmann, Y_spearmann, feature_names, X_rank_z, Y_rank_z
 
-def linear_regresion(etl) -> None:
-       X, Y, X_zscore, Y_zscore, X_train, X_test, Y_train, Y_test, xy_pearson, features_pearson, df_fpearson, df_xy_pearson, X_ranks, Y_ranks, X_spearmann, Y_spearmann,feature_names,X_rank_z,Y_rank_z = etl
-       weights = np.array(np.random.normal(0,0.01,size=X.shape[1]))
-       bias = 0
-       learning_rate = 0.01
-       n = X_rank_z.shape[0]
-       for epoc in range(1000):
-              y_pred = X_rank_z @ weights + bias
-              error = Y_rank_z - y_pred
-              MSE = (error.T @ error)/n
-              dL_dw = (2 * X_rank_z.T @ (y_pred - Y_rank_z)) / n
-              dL_db = (2 * np.sum(Y_rank_z - y_pred)) / n
-              weights -= learning_rate * dL_dw
-              bias -= learning_rate * dL_db
-              print("Epoch:", epoc)
-              print("MSE:", MSE)
-              print("Prediction:", y_pred)
-              if MSE < 1e-10:
-                     print("MSE below threshold. Stopping early.")
-                     break
+
+def linear_regression(etl: Callable[[pd.DataFrame], ETLReturnType]) -> tuple[pd.DataFrame,pd.DataFrame, dict]:
+    X, Y, X_zscore, Y_zscore, X_train, X_test, Y_train, Y_test, xy_pearson, features_pearson, df_fpearson, df_xy_pearson, X_ranks, Y_ranks, X_spearmann, Y_spearmann, feature_names, X_rank_z, Y_rank_z = etl
+    bias = 0
+    n = X_rank_z.shape[0]
+    best_mse = float('inf')
+    weights = np.array([ 0.64422243,  0.11740738, -0.80621795, -0.74821601, -0.42069151,  0.06012402,
+  0.49112416])
+    model = {
+        "weights": weights.tolist(),
+        "bias": bias,
+        "mean_target": Y.mean(),
+        "std_target": Y.std(),
+        "mean_features": X.mean(axis=0).tolist(),
+        "std_features": X.std(axis=0).tolist(),
+        "targets": Y.tolist(),
+    }
+    patience = 20
+    no_improvement = 0
+    for epoch in range(2000):
+        learning_rate = 0.1
+        y_pred = X_zscore @ weights + bias
+        error = Y_zscore - y_pred
+        mse = (error.T @ error) / n
+        dL_dw = (2 * X_zscore.T @ (y_pred - Y_zscore)) / n
+        dL_db = (2 * np.sum(Y_zscore - y_pred)) / n
+        weights -= learning_rate * dL_dw
+        bias -= learning_rate * dL_db
+        real_pred = y_pred * model["std_target"] + model["mean_target"]
+        print(f"Epoch: {epoch}")
+        print(f"MSE: {mse}")
+        print(f"Prediction (z): {y_pred}")
+        print(f"Prediction (real): {real_pred}")
+        print(f"Real targets: {Y}")
+        print(f"Weights: {weights}\n")
+
+        if mse < best_mse:
+            best_mse = mse
+            model["weights"] = weights.tolist()
+            model["bias"] = float(bias)
+            model["real_pred"] = (y_pred * model["std_target"] + model["mean_target"]).tolist()
+        else:
+            no_improvement += 1
+            if no_improvement >= patience:
+                print("Early stopping due to no improvement.")
+                print(f"Best MSE: {best_mse}")
+                print(f"Weights: {weights}")
+                break
+        indexes = pd.Series(Y)
+    df_result = pd.DataFrame({
+        "Prediction": model["real_pred"],
+        "Target": Y
+    },index=Y.indexes)
+    df_result["Diff"] = df_result["Prediction"] - df_result["Target"]
+    df_result["AbsError"] = abs(df_result["Prediction"] - df_result["Target"])
+    df_result_sorted = df_result.sort_values("AbsError",ascending=False)
+
+
+
+    model_path = os.path.join(os.path.dirname(__file__),"model.json")
+    with open(model_path, "w") as f:
+        json.dump(model, f)
+
+    print(df_result.to_string(index=False))
+    return df_result,df_result_sorted, model
 
 
 def show_transformed(etl) -> None:
-    X, Y, X_zscore, Y_zscore, X_train, X_test, Y_train, Y_test, xy_pearson, features_pearson, df_fpearson, df_xy_pearson, X_ranks, Y_ranks, X_spearmann, Y_spearmann,feature_names = etl
+    X, Y, X_zscore, Y_zscore, X_train, X_test, Y_train, Y_test, xy_pearson, features_pearson, df_fpearson, df_xy_pearson, X_ranks, Y_ranks, X_spearmann, Y_spearmann, feature_names = etl
     print("Features values")
     print(X)
     print("Target values:")
@@ -143,6 +214,9 @@ def show_transformed(etl) -> None:
     print("\nTargets:\n")
     print(pd.DataFrame(Y_zscore[:7], columns=["Targets 0-6"]))
 
+model = load_model()
 
-# show_transformed(etl(features_engineering(df_full.copy())))
-linear_regresion(etl(features_engineering(df_full.copy())))
+if model is None:
+    df_result, df_result_sorted, model = linear_regression(etl(features_engineering(df_full.copy())))
+else:
+    print("Loaded model — training skipped.")
