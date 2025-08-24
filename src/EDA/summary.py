@@ -8,7 +8,6 @@ df_big,df_small = ft.filter_samples(df_eng)
 sm_summary = ft.small_summary(df_small)
 big_summary = ft.big_summary(df_big)
 
-# ft.write_to_csv(sm_summary,"small_summary")
-# ft.write_to_csv(big_summary,"big_summary")
-
-print(big_summary)
+if __name__ == '__main__':
+    ft.write_to_csv(sm_summary, "small_summary")
+    ft.write_to_csv(big_summary, "big_summary")
