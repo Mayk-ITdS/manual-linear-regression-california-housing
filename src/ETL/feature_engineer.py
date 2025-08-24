@@ -9,7 +9,6 @@ from ETL.extract import *
 import time
 from ETL import bounds
 
-
 BBox = Tuple[float, float, float, float]
 
 class FeatureEngineer:
@@ -42,6 +41,21 @@ class FeatureEngineer:
             self.df.loc[mask,self.out_col] = name
 
         return self.df
+    def add_custom_features(self,df_):
+        #Estimated Rooms per person
+        df_["RoomPerPerson"] = (df_["AveRooms"]-df_["AveBedrms"])/df_["AveOccup"].replace(0,np.nan)
+        df_["RoomPerPerson"] = df_["RoomPerPerson"].fillna(0)
+        #Estimated income per person
+        df_["EstmIncPerson"] = df_["MedInc"]/df_["AveOccup"].replace(0,np.nan)
+        df_["EstmIncPerson"] = df_["EstmIncPerson"].fillna(0)
+        #Estimated population per household
+        df_["PopulationPerHousehold"] = df_["Population"]/df_["AveOccup"].replace(0,np.nan)
+        df_["PopulationPerHousehold"] = df_["PopulationPerHousehold"].fillna(0)
+        #squares for non-linear effect
+        df_["MedInc_sq"] = df_["MedInc"]**2
+        df_["EstmIncPerson_sq"]=df_["EstmIncPerson"]**2
+
+        return df_
 
     def filter_samples(self,df_eng: DataFrame) -> tuple[DataFrame, DataFrame]:
         start = time.perf_counter()
@@ -74,6 +88,7 @@ class FeatureEngineer:
         .agg(
             samples=("MedHouseVal", "count"),
             medIncomeValue=("MedInc", "median"),
+            medIncPerson=("EstmIncPerson", "mean"),
             MedHouseValMean=("MedHouseVal", "mean"),
             MedHouseValMedian=("MedHouseVal", "median"),
             MedHouseValStd=("MedHouseVal", "std"),
@@ -84,6 +99,7 @@ class FeatureEngineer:
         return (df_eng.groupby('Category').agg(
             samples=("MedHouseVal", "count"),
             medIncomeValue=("MedInc", "median"),
+            medIncPerson=("EstmIncPerson", "mean"),
             MedHouseValMean=("MedHouseVal", "mean"),
             MedHouseValMedian=("MedHouseVal", "median"),
             MedHouseValStd=("MedHouseVal", "std"),
