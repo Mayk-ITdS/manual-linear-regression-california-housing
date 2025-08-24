@@ -19,8 +19,13 @@ env/
 .DS_Store
 *.swp
 
-
-# Model artifacts (later)
+#Data-keeping
 *.h5
 *.pt
 *.pkl
+data/raw/*
+data/processed/*
+data/summary/*
+data/models/*
+data/logs/*
+!data/**/.gitkeep
