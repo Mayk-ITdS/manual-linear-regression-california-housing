@@ -12,20 +12,28 @@ env/
 # Jupyter
 .ipynb_checkpoints
 
-# PyCharm
+# PyCharm / VSCode
 .idea/
+.vscode/
 
 # OS / Editor stuff
 .DS_Store
 *.swp
 
-#Data-keeping
+# Data & outputs
 *.h5
 *.pt
 *.pkl
+*.csv
+*.png
+
 data/raw/*
 data/processed/*
 data/summary/*
 data/models/*
 data/logs/*
+plots/*
+
+# Keep empty dirs
 !data/**/.gitkeep
+!plots/.gitkeep
