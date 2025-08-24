@@ -1,17 +1,13 @@
 import seaborn as sns
-import regression
 import matplotlib.pyplot as plt
 import numpy as np
 from ETL.feature_engineer import FeatureEngineer
 from ETL import bounds
 from ETL.extract import df_full
 
-X, Y, X_zscore, Y_zscore, X_train, X_test, Y_train, Y_test, xy_pearson, features_pearson, df_fpearson, df_xy_corr, X_ranks, Y_ranks, X_spearmann, Y_spearmann, feature_names, X_rank_z, Y_rank_z = regression.etl(
-    regression.features_engineering(df_full.copy()))
 ft_eng = FeatureEngineer(df_full, bounds)
 df_corr = ft_eng.categorise_coordinates()
 df_big, df_sm = ft_eng.filter_samples(df_corr)
-
 
 class Visualizer:
     def __init__(self, X, Y, X_z, Y_z, df_xy_corr, feature_names, df_result, df_big, df_small):
@@ -105,7 +101,6 @@ class Visualizer:
             data = [Y[cat == k] for k in order]
             plt.boxplot(data, labels=order, showfliers=False)
             plt.xlabel("Category")
-            plt.x
             plt.ylabel("MedHouseVal")
             plt.title("Target distribution by Category")
             plt.grid(True, axis='y')
@@ -158,7 +153,6 @@ class Visualizer:
             x = self.df_big[selected_features]
             y = self.df_big['MedHouseVal']
 
-            # Dopasowanie regresji
             w, b = np.polyfit(x, y, 1)
             y_pred = w * x + b
 
@@ -166,7 +160,6 @@ class Visualizer:
             mse = np.mean((y - y_pred) ** 2)
             r2 = 1 - (np.sum((y - y_pred) ** 2) / np.sum((y - np.mean(y)) ** 2))
 
-            # Wykres
             plt.figure(figsize=(6, 4))
             plt.scatter(x, y, alpha=0.3, label="Data")
             plt.plot(np.sort(x), w * np.sort(x) + b, color="red", label=f"y={w:.2f}x + {b:.2f}")
@@ -178,9 +171,9 @@ class Visualizer:
             plt.tight_layout()
             plt.show()
 
-
-viz = Visualizer(X, Y, X_zscore, Y_zscore, df_xy_corr, feature_names, df_full, df_big, df_sm)
-# viz.show_distribution_by_category()
-# viz.regression_on_two_features()
-viz.feature_vs_target()
-print(df_big)
+if __name__=="__main__":
+    viz = Visualizer(x, y, x_zscore, y_zscore, df_xy_corr, feature_names, df_full, df_big, df_sm)
+    # viz.show_distribution_by_category()
+    # viz.regression_on_two_features()
+    viz.feature_vs_target()
+    print(df_big)
